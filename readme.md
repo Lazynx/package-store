@@ -31,7 +31,7 @@
 - Тестовый аккаунт Stripe
 - OAuth-ключи для Google
 
-Запуск
+
 # Сборка и запуск всех сервисов
 ```console
 docker compose build
@@ -43,3 +43,4 @@ docker compose up -d
 docker compose exec auth-service uv run alembic upgrade head
 docker compose exec billing-service uv run alembic upgrade head
 ```
+
