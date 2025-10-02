@@ -1,0 +1,29 @@
+FROM python:3.12-slim
+
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+ENV PYTHONPATH="${PYTHONPATH}:/app/src"
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV UV_COMPILE_BYTECODE=1
+ENV UV_PROJECT_ENVIRONMENT=/app/.venv
+
+WORKDIR /app
+
+# Copy lock files and sync deps (with cache mount)
+COPY pyproject.toml uv.lock ./
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --locked --no-install-project
+
+COPY . /app
+
+# Full sync (install project too, with cache)
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --locked
+
+# Expose
+EXPOSE 8000
+
+# Default CMD (override in compose for dev)
+CMD ["uv", "run", "uvicorn", "src.app:create_app", "--host", "0.0.0.0", "--port", "8000"]

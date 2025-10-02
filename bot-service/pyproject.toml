@@ -1,0 +1,37 @@
+[project]
+name = "bot-service"
+version = "0.1.0"
+description = "Bot service"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "aiogram>=3.22.0",
+    "dishka>=1.7.2",
+    "faststream[cli,rabbit]>=0.5.48",
+    "pydantic>=2.11.9",
+    "pydantic-settings>=2.11.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.2",
+    "ruff>=0.13.2",
+]
+
+[tool.ruff]
+src = ["src"]
+target-version = "py311"
+line-length = 110
+fix = true
+lint.select = ["E", "F", "W", "C", "D", "I", "N", "Q"]
+lint.ignore = ["D203", "D213", "D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107"]
+
+[tool.ruff.lint.flake8-quotes]
+inline-quotes = "single"
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*.py" = ["D", "E501"]
+"migrations/*.py" = ["ALL"]

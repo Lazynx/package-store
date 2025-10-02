@@ -1,0 +1,99 @@
+services:
+  auth-service:
+    container_name: test-task-auth-service
+    build:
+      context: auth-service
+      dockerfile: docker/Dockerfile.dev
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./auth-service:/app
+      - /app/.venv
+    env_file:
+      - .env
+    command: ["uv", "run", "uvicorn", "src.app:create_app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    depends_on:
+      db:
+        condition: service_healthy
+
+  billing-service:
+    build:
+      context: billing-service
+      dockerfile: docker/Dockerfile.dev
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./billing-service:/app
+      - /app/.venv
+    env_file:
+      - .env
+    command: ["uv", "run", "uvicorn", "src.app:create_app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  bot-service:
+    container_name: test-task-bot-service
+    build:
+      context: bot-service
+      dockerfile: docker/Dockerfile.dev
+    volumes:
+      - ./bot-service:/app
+      - /app/.venv
+    env_file:
+      - .env
+    command: ["uv", "run", "faststream", "run", "src.app:amqp", "--reload"]
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  db:
+    container_name: test-task-db
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_LOGIN}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DATABASE}
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "${POSTGRES_LOGIN}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  db-billing:
+    container_name: test-task-db-billing
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${BILLING_POSTGRES_LOGIN}
+      POSTGRES_PASSWORD: ${BILLING_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${BILLING_POSTGRES_DATABASE}
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "${BILLING_POSTGRES_LOGIN}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    container_name: test-task-rabbitmq
+    image: rabbitmq:3.13-management
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_LOGIN}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
+volumes:
+  postgres_data:
